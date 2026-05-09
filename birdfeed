@@ -1,0 +1,101 @@
+#!/usr/bin/env bash
+set -uo pipefail
+
+readonly SCRIPT_NAME="birdfeed"
+
+usage() {
+  echo "Usage: ${SCRIPT_NAME} <file.wav> [more files...]"
+  exit 2
+}
+
+error() {
+  echo "${SCRIPT_NAME}: $*" >&2
+}
+
+require_command() {
+  if ! command -v "$1" >/dev/null 2>&1; then
+    error "$1 not found in PATH"
+    exit 1
+  fi
+}
+
+duration_seconds() {
+  ffprobe -v error -show_entries format=duration -of default=nw=1:nk=1 "$1"
+}
+
+duration_is_close_enough() {
+  awk -v in_dur="$1" -v out_dur="$2" '
+    BEGIN {
+      if (in_dur <= 0 || out_dur <= 0) {
+        exit 1
+      }
+
+      diff = (out_dur > in_dur) ? (out_dur - in_dur) : (in_dur - out_dur)
+      rel_ok = diff <= in_dur * 0.01
+      abs_ok = diff <= 0.25
+
+      exit !(rel_ok || abs_ok)
+    }'
+}
+
+convert_file() {
+  local inpath="$1"
+  local dir
+  local base
+  local name
+  local tmp
+  local in_dur
+  local out_dur
+
+  if [[ ! -f "$inpath" ]]; then
+    error "file not found: $inpath"
+    return 1
+  fi
+
+  dir="$(dirname "$inpath")"
+  base="$(basename "$inpath")"
+  name="${base%.*}"
+  tmp="${dir}/${name}.birdfeed_tmp.wav"
+
+  if ! ffmpeg -hide_banner -nostdin -y \
+    -i "$inpath" \
+    -map 0:a:0 \
+    -c:a pcm_s16le -ar 44100 -ac 2 \
+    "$tmp"; then
+    rm -f "$tmp"
+    error "conversion failed: $inpath"
+    return 1
+  fi
+
+  in_dur="$(duration_seconds "$inpath" 2>/dev/null || true)"
+  out_dur="$(duration_seconds "$tmp" 2>/dev/null || true)"
+
+  if duration_is_close_enough "$in_dur" "$out_dur"; then
+    mv -f "$tmp" "$inpath"
+    echo "Converted and replaced: $inpath"
+    return 0
+  fi
+
+  error "duration check failed for: $inpath (in=${in_dur:-unknown}s out=${out_dur:-unknown}s)"
+  error "not replacing original; temp file left at: $tmp"
+  return 1
+}
+
+main() {
+  [[ $# -ge 1 ]] || usage
+
+  require_command ffmpeg
+  require_command ffprobe
+  require_command awk
+
+  local failed=0
+  local inpath
+
+  for inpath in "$@"; do
+    convert_file "$inpath" || failed=1
+  done
+
+  return "$failed"
+}
+
+main "$@"
