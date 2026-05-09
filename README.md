@@ -2,7 +2,7 @@
 
 `birdfeed` fixes NPR/PRSS-delivered MP2 audio files that arrive inside WAV containers so they are usable on macOS.
 
-Some NPR/PRSS audio files look like normal `.wav` files, but the audio inside is MP2. Many Mac apps do not handle those files cleanly. `birdfeed` uses FFmpeg to rewrite the audio as a standard stereo PCM WAV file, then replaces the original file only after a basic duration sanity check passes.
+PRSS delivers MP2 audio files in .wav caontainers. With the fall of Quicktime, the faux .wav files are a pain to deal with on MacOS. `birdfeed` uses FFmpeg to rewrite the audio as a standard stereo PCM WAV file, then replaces the original file after a basic duration sanity check passes.
 
 ## What It Does
 
