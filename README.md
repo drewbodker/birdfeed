@@ -1,6 +1,6 @@
 # birdfeed
 
-`birdfeed` fixes NPR/PRSS-delivered MP2 audio files that arrive inside WAV containers so they are usable on macOS.
+`birdfeed` converts NPR/PRSS-delivered MP2 audio files that arrive inside WAV containers so they are usable on macOS.
 
 PRSS delivers MP2 audio in .wav containers. With QuickTime no longer supporting MP2, these faux .wav files have become a pain to work with on macOS. `birdfeed` uses FFmpeg to rewrite the audio as a standard stereo PCM WAV file, then replaces the original file after a basic duration sanity check passes.
 
