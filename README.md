@@ -35,7 +35,7 @@ brew install ffmpeg
 Clone the repository:
 
 ```sh
-git clone https://github.com/YOUR-USERNAME/birdfeed.git
+git clone https://github.com/drewbodker/birdfeed.git
 cd birdfeed
 ```
 
